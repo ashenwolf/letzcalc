@@ -1,66 +1,117 @@
-:- module(tax_lib, [calculate_tax/4]).
+:- module(tax_lib, [calculate_tax/4, lux_tax/2]).
+:- use_module(library(clpr)).
+:- use_module(library(apply)).
+:- use_module(tax_constants).
 
-% Luxembourg tax rate brackets for 2023 (simplified)
-% Format: gross_min, gross_max, rate
-tax_bracket(0, 11265, 0).
-tax_bracket(11266, 13173, 8).
-tax_bracket(13174, 15009, 9).
-tax_bracket(15010, 16881, 10).
-tax_bracket(16882, 18753, 11).
-tax_bracket(18754, 20625, 12).
-tax_bracket(20626, 22569, 14).
-tax_bracket(22570, 24513, 16).
-tax_bracket(24514, 26457, 18).
-tax_bracket(26458, 28401, 20).
-tax_bracket(28402, 30345, 22).
-tax_bracket(30346, 32289, 24).
-tax_bracket(32290, 34233, 26).
-tax_bracket(34234, 36177, 28).
-tax_bracket(36178, 38121, 30).
-tax_bracket(38122, 40065, 32).
-tax_bracket(40066, 42009, 34).
-tax_bracket(42010, 43953, 36).
-tax_bracket(43954, 45897, 38).
-tax_bracket(45898, 100000, 39).
-tax_bracket(100001, 150000, 40).
-tax_bracket(150001, 200000, 41).
-tax_bracket(200001, 999999999, 42).
+% Social security deductions
+deduction_healthcare(Gross, Deduction):-
+    {Deduction = Gross * 0.028}.
 
-% Social security contributions
-social_security_rate(0.125).  % 12.5% for health insurance, pension, etc.
+deduction_healthcare_contrib(Gross, Deduction):-
+    {Deduction = Gross * 0.0025}.
 
+deduction_pension(Gross, Deduction):-
+    {Deduction = Gross * 0.08}.
+
+deduction_unemployment(Gross, Deduction):-
+    tax_constants:constants(_, DCR, _),
+    {Deduction = (Gross - DCR) * 0.014}.
+
+% Tax calculation using intervals
+get_intervals(_, TotalTax, []):-
+    {TotalTax=0}.
+
+get_intervals(Sum, TotalTax, [CurrentInterval|NextIntervals]):-
+    CurrentInterval=[CurrentLimit|_],
+    {Sum < CurrentLimit},
+    get_intervals(Sum, TotalTax, NextIntervals).
+    
+get_intervals(Sum, TotalTax, [CurrentInterval|NextIntervals]):-
+    CurrentInterval=[CurrentLimit, CurrentTax|_],
+    {
+        Sum >= CurrentLimit,
+        Taxable = Sum - CurrentLimit,
+        Tax = Taxable * CurrentTax * 1.07
+    },
+    get_intervals(CurrentLimit, RemainingTax, NextIntervals),
+    {TotalTax = Tax + RemainingTax}.
+
+get_intervals(Sum, TotalTax):-
+    tax_constants:constants(Int, _, _),
+    get_intervals(Sum, TotalTax, Int).
+
+to_month(ValueY, ValueM):-
+    {ValueM = ValueY / 12}.
+    
+convert_pair(Key-YearlyValue, Key-MonthlyValue) :-
+    to_month(YearlyValue, MonthlyValue).
+
+% Main tax calculation predicate (new sophisticated version)
+lux_tax(yearly(Gross), yearly(Net, SocialContribution, AllDeductions, TaxedIncome, Tax, AE)):-
+    tax_constants:constants(_, _, FD),
+    deduction_healthcare(Gross, Healthcare),
+    deduction_healthcare_contrib(Gross, HealthcareContrib),
+    deduction_pension(Gross, Pension),
+    deduction_unemployment(Gross, Unemployment),
+    AllDeductions=deductions{
+        healthcare: Healthcare,
+        healthcare_contrib: HealthcareContrib,
+        pension: Pension,
+        unemployment: Unemployment
+    },
+
+    {
+        Deductions = Healthcare + HealthcareContrib + Pension,
+        SocialContribution = Deductions + Unemployment,
+        TaxedIncome = Gross - Deductions - FD - AE
+    },
+    
+    get_intervals(TaxedIncome, Tax),
+    
+    {
+        Net = (TaxedIncome - Tax - Unemployment)
+    }.
+
+lux_tax(yearly(Gross), monthly(Net, Deductions, AllDeductions, TaxedIncome, Tax, AE)):-
+    lux_tax(yearly(Gross), yearly(NetY, DeductionsY, AllDeductionsY, TaxedIncomeY, TaxY, AEY)),
+    dict_pairs(AllDeductionsY, deductions, DeductionFieldsY),
+    maplist(convert_pair, DeductionFieldsY, DeductionFieldsM),
+    dict_pairs(AllDeductions, deductions, DeductionFieldsM),
+    to_month(NetY, Net),
+    to_month(DeductionsY, Deductions),
+    to_month(TaxedIncomeY, TaxedIncome),
+    to_month(TaxY, Tax),
+    to_month(AEY, AE).
+
+lux_tax(monthly(Gross), monthly(Net, Deductions, AllDeductions, TaxedIncome, Tax, AE)):-
+    {GrossY = Gross * 12},
+    lux_tax(yearly(GrossY), monthly(Net, Deductions, AllDeductions, TaxedIncome, Tax, AE)).
+
+lux_tax(monthly(Gross), yearly(Net, Deductions, AllDeductions, TaxedIncome, Tax, AE)):-
+    {GrossY = Gross * 12},
+    lux_tax(yearly(GrossY), yearly(Net, Deductions, AllDeductions, TaxedIncome, Tax, AE)).
+
+% Legacy interface for backward compatibility
 calculate_tax(Gross, Tax, Net, Details) :-
-    calculate_brackets(Gross, 0, Tax, BracketDetails),
-    social_security_rate(SSRate),
-    SocialSecurity is Gross * SSRate,
-    Net is Gross - Tax - SocialSecurity,
+    AE = 0, % No additional exemptions for basic calculation
+    lux_tax(yearly(Gross), yearly(NetCalc, SocialContribution, AllDeductions, TaxedIncome, TaxCalc, AE)),
+    Tax = TaxCalc,
+    Net = NetCalc,
+    AllDeductions.healthcare = Healthcare,
+    AllDeductions.healthcare_contrib = HealthcareContrib,
+    AllDeductions.pension = Pension,
+    AllDeductions.unemployment = Unemployment,
     Details = json([
         gross=Gross,
         tax=Tax,
-        social_security=SocialSecurity,
+        social_contribution=SocialContribution,
         net=Net,
-        tax_brackets=BracketDetails
+        taxed_income=TaxedIncome,
+        deductions=json([
+            healthcare=Healthcare,
+            healthcare_contrib=HealthcareContrib,
+            pension=Pension,
+            unemployment=Unemployment
+        ])
     ]).
-
-calculate_brackets(Gross, AccTax, TotalTax, BracketDetails) :-
-    findall(
-        json([min=Min, max=Max, rate=Rate, amount=Amount]),
-        (
-            tax_bracket(Min, Max, Rate),
-            Gross >= Min,
-            (Gross >= Max -> 
-                Amount is (Max - Min + 1) * (Rate / 100)
-            ;
-                Amount is (Gross - Min + 1) * (Rate / 100)
-            ),
-            Amount > 0
-        ),
-        BracketDetails
-    ),
-    sum_bracket_amounts(BracketDetails, AccTax, TotalTax).
-
-sum_bracket_amounts([], Tax, Tax).
-sum_bracket_amounts([json([min=_, max=_, rate=_, amount=Amount])|Rest], AccTax, TotalTax) :-
-    NewAccTax is AccTax + Amount,
-    sum_bracket_amounts(Rest, NewAccTax, TotalTax).
 

@@ -24,6 +24,7 @@ http:location(img, root(img), []).
 :- http_handler(root(tax), tax_handler, []).
 :- http_handler(root(mortgage), mortgage_handler, []).
 :- http_handler(root(partial/tax/calculate), tax_calculate, [method(post)]).
+:- http_handler(root(partial/tax/results), tax_results_only, [methods([get, post])]).
 :- http_handler(root(partial/mortgage/calculate), mortgage_calculate, [method(post)]).
 
 % Static file handlers

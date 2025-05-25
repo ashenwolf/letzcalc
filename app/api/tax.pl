@@ -1,4 +1,4 @@
-:- module(tax_api, [tax_calculate/1, deductions_table_html/3, results_content//6, tax_response_html//3]).
+:- module(tax_api, [tax_calculate/1, tax_results_only/1, deductions_table_html/3, results_content//7, tax_response_html//4, tax_results_response_html//4]).
 
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/http_json)).
@@ -14,15 +14,28 @@ format_currency(Value, Formatted) :-
 tax_calculate(Request) :-
     http_parameters(Request, [
         gross(Gross, [number]),
-        tax_class(TaxClass, [default('1')])
+        tax_class(TaxClass, [default('1')]),
+        period(Period, [default('yearly')])
     ]),
-    calculate_tax(Gross, _Tax, _Net, Details),
-    phrase(tax_response_html(Gross, TaxClass, Details), HTMLTokens),
+    calculate_tax_for_period(Gross, Period, Details),
+    phrase(tax_response_html(Gross, TaxClass, Period, Details), HTMLTokens),
     format('Content-type: text/html~n~n'),
     print_html(HTMLTokens).
 
-% tax_response_html//3: DCG rule generating the #tax-calculator-container div
-tax_response_html(Gross, TaxClass, json([gross=GrossResult, tax=Tax, social_contribution=SocialContribution, net=Net, taxed_income=TaxedIncome, deductions=Deductions])) -->
+% Handler for tab switching - returns only the results section
+tax_results_only(Request) :-
+    http_parameters(Request, [
+        gross(Gross, [number]),
+        tax_class(TaxClass, [default('1')]),
+        period(Period, [default('yearly')])
+    ]),
+    calculate_tax_for_period(Gross, Period, Details),
+    phrase(tax_results_response_html(Gross, TaxClass, Period, Details), HTMLTokens),
+    format('Content-type: text/html~n~n'),
+    print_html(HTMLTokens).
+
+% Generate only the tax results section (for tab switching)
+tax_results_response_html(Gross, TaxClass, Period, json([gross=GrossResult, tax=Tax, social_contribution=SocialContribution, net=Net, taxed_income=TaxedIncome, deductions=Deductions])) -->
     {
         format_currency(GrossResult, GrossF),
         format_currency(Tax, TaxF),
@@ -30,15 +43,122 @@ tax_response_html(Gross, TaxClass, json([gross=GrossResult, tax=Tax, social_cont
         format_currency(Net, NetF),
         format_currency(TaxedIncome, TaxedIncomeF),
         deductions_table_html(Deductions, DeductionsHTML, []),
-        ResultsTerm = tax_api:results_content(GrossF, TaxF, SocialContributionF, NetF, TaxedIncomeF, DeductionsHTML)
+        ResultsTerm = tax_api:results_content(GrossF, TaxF, SocialContributionF, NetF, TaxedIncomeF, DeductionsHTML, Period)
+    },
+    html(div([id('tax-results'), class('bg-gray-50 p-4 rounded-lg')], [
+        \period_tabs_inline(Gross, TaxClass, Period),
+        \render_results_inline(ResultsTerm)
+    ])).
+
+% Inline DCG rules to avoid module call issues
+period_tabs_inline(GrossValue, TaxClassValue, CurrentPeriod) -->
+    html(div([class('mb-4')], [
+        div([class('flex border-b border-gray-200')], [
+            \period_tab_inline('yearly', 'Yearly', GrossValue, TaxClassValue, CurrentPeriod),
+            \period_tab_inline('monthly', 'Monthly', GrossValue, TaxClassValue, CurrentPeriod)
+        ])
+    ])).
+
+period_tab_inline(Period, Label, GrossValue, TaxClassValue, CurrentPeriod) -->
+    {
+        (Period = CurrentPeriod -> 
+            Classes = 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+        ; 
+            Classes = 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer'
+        ),
+        % Only make it clickable if we have a gross value
+        (GrossValue \= '' ->
+            format(atom(ActionURL), '/partial/tax/results?gross=~w&tax_class=~w&period=~w', [GrossValue, TaxClassValue, Period]),
+            TwinSparkAttrs = [
+                href=ActionURL,
+                'ts-req'=ActionURL,
+                'ts-swap'='morph',
+                'ts-target'='#tax-results'
+            ]
+        ;
+            TwinSparkAttrs = [href='#']
+        )
+    },
+    html(a([
+        class(Classes)
+        |TwinSparkAttrs
+    ], Label)).
+
+render_results_inline(Rule) --> 
+    { compound(Rule) }, % If it looks like a DCG rule call (e.g., results_content(...))
+    !, % Cut to prevent backtracking to the atomic case if Rule is compound
+    call(Rule). % Call the DCG rule
+render_results_inline(Atom) --> % Otherwise, it's an atom (e.g., the placeholder string)
+    { atomic(Atom) },
+    html(div([class('text-gray-500')], Atom)).
+
+% Calculate tax for specified period (yearly or monthly)
+calculate_tax_for_period(Gross, yearly, Details) :-
+    AE = 0,
+    lux_tax(yearly(Gross), yearly(Net, SocialContribution, AllDeductions, TaxedIncome, Tax, AE)),
+    AllDeductions.healthcare = Healthcare,
+    AllDeductions.healthcare_contrib = HealthcareContrib,
+    AllDeductions.pension = Pension,
+    AllDeductions.unemployment = Unemployment,
+    Details = json([
+        gross=Gross,
+        tax=Tax,
+        social_contribution=SocialContribution,
+        net=Net,
+        taxed_income=TaxedIncome,
+        deductions=json([
+            healthcare=Healthcare,
+            healthcare_contrib=HealthcareContrib,
+            pension=Pension,
+            unemployment=Unemployment
+        ])
+    ]).
+
+calculate_tax_for_period(Gross, monthly, Details) :-
+    AE = 0,
+    lux_tax(yearly(Gross), monthly(Net, SocialContribution, AllDeductions, TaxedIncome, Tax, AE)),
+    AllDeductions.healthcare = Healthcare,
+    AllDeductions.healthcare_contrib = HealthcareContrib,
+    AllDeductions.pension = Pension,
+    AllDeductions.unemployment = Unemployment,
+    Details = json([
+        gross=Gross,
+        tax=Tax,
+        social_contribution=SocialContribution,
+        net=Net,
+        taxed_income=TaxedIncome,
+        deductions=json([
+            healthcare=Healthcare,
+            healthcare_contrib=HealthcareContrib,
+            pension=Pension,
+            unemployment=Unemployment
+        ])
+    ]).
+
+% tax_response_html//4: DCG rule generating the #tax-calculator-container div
+tax_response_html(Gross, TaxClass, Period, json([gross=GrossResult, tax=Tax, social_contribution=SocialContribution, net=Net, taxed_income=TaxedIncome, deductions=Deductions])) -->
+    {
+        format_currency(GrossResult, GrossF),
+        format_currency(Tax, TaxF),
+        format_currency(SocialContribution, SocialContributionF),
+        format_currency(Net, NetF),
+        format_currency(TaxedIncome, TaxedIncomeF),
+        deductions_table_html(Deductions, DeductionsHTML, []),
+        ResultsTerm = tax_api:results_content(GrossF, TaxF, SocialContributionF, NetF, TaxedIncomeF, DeductionsHTML, Period)
     },
     % Directly call the ui:tax_calculator_container DCG rule.
     % Its expansion (the div with id='tax-calculator-container') becomes the content generated by this DCG rule.
-    ui:tax_calculator_container(Gross, TaxClass, ResultsTerm).
+    ui:tax_calculator_container(Gross, TaxClass, Period, ResultsTerm).
 
 % DCG rule for results content. It will be called as tax_api:results_content by render_results//1 in ui.pl
-results_content(GrossF, TaxF, SocialContributionF, NetF, TaxedIncomeF, DeductionsHTML) -->
+results_content(GrossF, TaxF, SocialContributionF, NetF, TaxedIncomeF, DeductionsHTML, Period) -->
+    {
+        (Period = yearly -> PeriodLabel = 'Yearly' ; PeriodLabel = 'Monthly')
+    },
     html([
+        div([class('mb-4')], [
+            h4([class('text-lg font-semibold text-blue-700')], [PeriodLabel, ' Calculation'])
+        ]),
         table([class('w-full mb-4')], [
             tbody([],
                 [

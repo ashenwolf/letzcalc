@@ -1,0 +1,17 @@
+{
+  "name": "lux-tax",
+  "version": "1.0.0",
+  "description": "Luxembourg Tax and Mortgage Calculator",
+  "scripts": {
+    "dev": "swipl -s app/server.pl -g 'server:start'",
+    "build:css": "tailwindcss -i ./app/static/css/input.css -o ./public/css/style.css --watch"
+  },
+  "dependencies": {
+    "tailwindcss": "^3.4.1",
+    "twinspark": "^1.0.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35"
+  }
+} 

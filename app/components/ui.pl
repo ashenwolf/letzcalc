@@ -1,4 +1,4 @@
-:- module(ui, [container//1, card//1, app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, page_title//1, tax_calculator_form//2, tax_calculator_container//3, gross_input//1, tax_class_option//3, render_results//1]).
+:- module(ui, [container//1, card//1, app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, page_title//1, tax_calculator_form//3, tax_calculator_container//4, gross_input//1, tax_class_option//3, render_results//1, period_tabs//3, period_tab//5, tax_results_with_tabs//4]).
 :- use_module(library(http/html_write)).
 
 container(Content) -->
@@ -32,7 +32,7 @@ page_title(Text) -->
     html(h1([class('mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl')], Text)).
 
 % Reusable tax calculator form component
-tax_calculator_form(GrossValue, TaxClassValue) -->
+tax_calculator_form(GrossValue, TaxClassValue, Period) -->
     html(form([
         class('space-y-6'), 
         id('tax-calculator'), 
@@ -54,6 +54,7 @@ tax_calculator_form(GrossValue, TaxClassValue) -->
                 \tax_class_option('Class 2', '2', TaxClassValue)
             ])
         ]),
+        input([type('hidden'), name('period'), value(Period), id('period-input')]),
         button([type('submit'), class('text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none')], 'Calculate')
     ])).
 
@@ -70,17 +71,57 @@ tax_class_option(Text, Value, SelectedValue) -->
     html(option([value(Value)|Selected], Text)).
 
 % Complete tax calculator container - now WITH the outer #tax-calculator-container div
-tax_calculator_container(GrossValue, TaxClassValue, ResultsContentRuleOrAtom) -->
+tax_calculator_container(GrossValue, TaxClassValue, Period, ResultsContentRuleOrAtom) -->
     html(div([id('tax-calculator-container'), class('grid grid-cols-1 md:grid-cols-2 gap-6')], [
         % This rule now generates a sequence of two sibling divs: tax-form and tax-results INSIDE the wrapper.
         div([id('tax-form')], [
-            \tax_calculator_form(GrossValue, TaxClassValue)
+            \tax_calculator_form(GrossValue, TaxClassValue, Period)
         ]),
         div([id('tax-results'), class('bg-gray-50 p-4 rounded-lg')], [
-            h3([class('text-lg font-semibold mb-2')], 'Results'),
-            \render_results(ResultsContentRuleOrAtom)
+            \tax_results_with_tabs(GrossValue, TaxClassValue, Period, ResultsContentRuleOrAtom)
         ])
     ])).
+
+% Tax results with tabs - this is the second render group
+tax_results_with_tabs(GrossValue, TaxClassValue, Period, ResultsContentRuleOrAtom) -->
+    html([
+        \period_tabs(GrossValue, TaxClassValue, Period),
+        \render_results(ResultsContentRuleOrAtom)
+    ]).
+
+% Add period tabs for switching between yearly and monthly
+period_tabs(GrossValue, TaxClassValue, CurrentPeriod) -->
+    html(div([class('mb-4')], [
+        div([class('flex border-b border-gray-200')], [
+            \period_tab('yearly', 'Yearly', GrossValue, TaxClassValue, CurrentPeriod),
+            \period_tab('monthly', 'Monthly', GrossValue, TaxClassValue, CurrentPeriod)
+        ])
+    ])).
+
+period_tab(Period, Label, GrossValue, TaxClassValue, CurrentPeriod) -->
+    {
+        (Period = CurrentPeriod -> 
+            Classes = 'px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+        ; 
+            Classes = 'px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent cursor-pointer'
+        ),
+        % Only make it clickable if we have a gross value
+        (GrossValue \= '' ->
+            format(atom(ActionURL), '/partial/tax/results?gross=~w&tax_class=~w&period=~w', [GrossValue, TaxClassValue, Period]),
+            TwinSparkAttrs = [
+                href=ActionURL,
+                'ts-req'=ActionURL,
+                'ts-swap'='morph',
+                'ts-target'='#tax-results'
+            ]
+        ;
+            TwinSparkAttrs = [href='#']
+        )
+    },
+    html(a([
+        class(Classes)
+        |TwinSparkAttrs
+    ], Label)).
 
 % Helper to render results: if it's a compound term, call it as a DCG rule, else treat as atom.
 render_results(Rule) --> 

@@ -1,0 +1,56 @@
+:- use_module(library(http/thread_httpd)).
+:- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_files)).
+:- use_module(library(http/html_write)).
+
+:- use_module(components/header).
+:- use_module(components/ui).
+:- use_module(pages/home).
+:- use_module(pages/tax).
+:- use_module(pages/mortgage).
+:- use_module(api/tax).
+:- use_module(api/mortgage).
+
+% Define file locations
+:- multifile http:location/3.
+:- dynamic   http:location/3.
+
+http:location(js, root(js), []).
+http:location(css, root(css), []).
+http:location(img, root(img), []).
+
+% Define handlers
+:- http_handler(root(.), home_handler, []).
+:- http_handler(root(tax), tax_handler, []).
+:- http_handler(root(mortgage), mortgage_handler, []).
+:- http_handler(root(partial/tax/calculate), tax_calculate, [method(post)]).
+:- http_handler(root(partial/mortgage/calculate), mortgage_calculate, [method(post)]).
+
+% Static file handlers
+:- http_handler(js(.), http_reply_from_files('public/js', []), [prefix]).
+:- http_handler(css(.), http_reply_from_files('public/css', []), [prefix]).
+:- http_handler(img(.), http_reply_from_files('public/img', []), [prefix]).
+
+server:start :-
+    http_server(http_dispatch, [port(8080)]).
+
+server:stop :-
+    http_stop_server(8080, []).
+
+home_handler(_Request) :-
+    reply_html_page(
+        \header('Lux Tax Calculator'),
+        \home_page
+    ).
+
+tax_handler(_Request) :-
+    reply_html_page(
+        \header('Tax Calculator'),
+        \tax_page
+    ).
+
+mortgage_handler(_Request) :-
+    reply_html_page(
+        \header('Mortgage Calculator'),
+        \mortgage_page
+    ).

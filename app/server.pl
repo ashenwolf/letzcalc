@@ -29,8 +29,8 @@ http:location(img, root(img), []).
 
 % Static file handlers
 :- http_handler(js(.), http_reply_from_files('public/js', []), [prefix]).
-:- http_handler(css(.), http_reply_from_files('public/css', []), [prefix]).
-:- http_handler(img(.), http_reply_from_files('public/img', []), [prefix]).
+% :- http_handler(css(.), http_reply_from_files('public/css', []), [prefix]).
+% :- http_handler(img(.), http_reply_from_files('public/img', []), [prefix]).
 
 server:start :-
     http_server(http_dispatch, [port(8080)]).

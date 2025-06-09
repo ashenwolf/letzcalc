@@ -1,3 +1,20 @@
+% =============================================================================
+% Tax Calculation Library - Business Logic
+% 
+% Main Predicates:
+% - lux_tax/2: Advanced tax calculation with detailed breakdowns
+% - calculate_tax/4: Legacy interface for backward compatibility
+% 
+% Usage Examples:
+% - lux_tax(yearly(50000), yearly(Net, SocialContrib, AllDeductions, TaxedIncome, Tax, AE))
+% - lux_tax(monthly(4167), monthly(Net, SocialContrib, AllDeductions, TaxedIncome, Tax, AE))
+% 
+% Development Notes:
+% - Modify tax rates and brackets in ../data/intervals.csv
+% - Update social security rates and constants in tax_constants.pl
+% - Always test thoroughly - affects real money calculations
+% =============================================================================
+
 :- module(tax_lib, [calculate_tax/4, lux_tax/2]).
 :- use_module(library(clpr)).
 :- use_module(library(apply)).

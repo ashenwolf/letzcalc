@@ -1,3 +1,20 @@
+% =============================================================================
+% Tax Constants and Configuration
+% 
+% This module provides tax-related constants for Luxembourg tax calculations:
+% - Tax brackets and rates (loaded from ../data/intervals.csv)
+% - Social security contribution limits
+% - Standard deductions and reductions
+% 
+% To modify tax rates:
+% 1. Edit ../data/intervals.csv (format: income_threshold,tax_rate)
+% 2. Reload predicates with 'make.' in SWI-Prolog console
+% 
+% Constants:
+% - DCR: Dependency Contribution Reduction (€642.73 * 12 annually)
+% - FD: Standard tax reduction (€198)
+% =============================================================================
+
 :- module(tax_constants, [constants/3]).
 :- use_module(library(csv)).
 

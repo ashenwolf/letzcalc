@@ -1,0 +1,68 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Prolog Web Development Patterns
+
+## DCG (Definite Clause Grammar) for HTML
+
+This project uses Prolog DCG rules to generate HTML. Key patterns:
+
+### HTML Element Generation
+```prolog
+% Basic element pattern
+html_element(Tag, Content) -->
+    html(Tag, Content).
+
+% Form input pattern  
+input_field(Type, Name, Value) -->
+    html(input([type=Type, name=Name, value=Value])).
+```
+
+### Component Structure
+Components in [app/components/](mdc:app/components) follow these patterns:
+- Each component is a Prolog predicate that generates HTML via DCG
+- Components can accept parameters for dynamic content
+- Reusable UI elements are defined as separate predicates
+
+## HTTP Routing Patterns
+
+In [app/server.pl](mdc:app/server.pl), routes are defined as:
+```prolog
+% Static route
+http_handler('/path', handler_predicate, []).
+
+% Dynamic route with parameters
+http_handler('/api/calculate', calculate_handler, [method(post)]).
+```
+
+## Page Controller Pattern
+
+Page controllers in [app/pages/](mdc:app/pages) typically:
+1. Parse HTTP request parameters
+2. Call business logic predicates
+3. Generate HTML response using DCG rules
+4. Return partial HTML for AJAX updates
+
+## Data Handling Patterns
+
+### CSV Data Loading
+Tax bracket data from [app/data/intervals.csv](mdc:app/data/intervals.csv) is loaded using:
+- CSV parsing predicates
+- Dynamic fact assertion for runtime queries
+- Cached lookup for performance
+
+### Form Data Processing
+```prolog
+% Extract form parameters
+get_form_data(Request, salary, Salary),
+get_form_data(Request, class, TaxClass).
+```
+
+## Testing and Debugging
+
+Use SWI-Prolog's built-in debugging:
+- `trace.` - Start trace mode
+- `spy(predicate/arity).` - Set breakpoints
+- `debug(topic).` - Enable debug messages

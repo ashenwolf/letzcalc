@@ -1,0 +1,65 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Development Workflow
+
+## Starting the Development Server
+
+### Primary Method
+```bash
+swipl -s app/server.pl -g 'server:start'
+```
+
+### Alternative (using Makefile)
+```bash
+make start
+```
+
+The server runs on **http://localhost:8080**
+
+## Project Structure for Development
+
+### Making Changes
+
+1. **Business Logic**: Edit files in [app/lib/](mdc:app/lib)
+   - Modify tax calculations, add new predicates
+   - Restart server after changes (Prolog doesn't auto-reload)
+
+2. **UI Components**: Edit files in [app/components/](mdc:app/components)
+   - Modify HTML generation predicates
+   - Restart server to see changes
+
+3. **Page Controllers**: Edit files in [app/pages/](mdc:app/pages)
+   - Modify request handling and routing logic
+   - Restart server after changes
+
+4. **Styling**: Use only Tailwind CSS classes
+   - Use Tailwind CSS classes
+
+### Testing Changes
+
+1. **Manual Testing**: Use the web interface at localhost:8080
+2. **Prolog Console**: Start SWI-Prolog and load modules manually. Always use the currently opened terminal window as it already has opened session.
+3. **Debug Mode**: Use Prolog debugging predicates for troubleshooting
+4. **Reload Predicates**: To reload a changed predicate, run execute `make.` command in a current terminal window.
+
+## Common Development Tasks
+
+### Adding New Tax Calculations
+1. Add predicates to [app/lib/tax.pl](mdc:app/lib/tax.pl)
+2. Update constants in [app/lib/tax_constants.pl](mdc:app/lib/tax_constants.pl)
+3. Modify data in [app/data/intervals.csv](mdc:app/data/intervals.csv) if needed
+4. Update UI components to display new calculations
+
+### Adding New Pages
+1. Create controller in [app/pages/](mdc:app/pages)
+2. Add route in [app/server.pl](mdc:app/server.pl)
+3. Create UI components in [app/components/](mdc:app/components)
+4. Add navigation links if needed
+
+### Important Notes
+- **Always reload predicates without restarting the server** after modifying Prolog files
+- **Test thoroughly** - this is a tax calculator affecting real money decisions
+- **Check browser console** for JavaScript errors during development

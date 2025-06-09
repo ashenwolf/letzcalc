@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Lux Tax Calculator - Project Overview
+
+## Project Type and Architecture
+
+This is a **SWI-Prolog web application** for Luxembourg tax and mortgage calculations. This is NOT a typical JavaScript/Node.js web app.
+
+### Key Technologies
+- **Backend**: SWI-Prolog (server.pl)
+- **Frontend**: Twinspark.JS library + Tailwind CSS (via CDN)
+- **No traditional framework**: Uses SWI-Prolog's HTTP server capabilities
+
+### Unique Characteristics
+- All business logic is written in Prolog predicates
+- HTML templates are generated using Prolog DCG (Definite Clause Grammar)
+- API endpoints return partial HTML fragments, not JSON
+- Static assets are served from [public/](mdc:public) directory. Files in this directory should never be modified.
+
+## Main Entry Points
+
+- **Server**: [app/server.pl](mdc:app/server.pl) - Main HTTP server and routing
+- **Development**: Run with `swipl -s app/server.pl -g 'server:start'` or `make start`
+- **Port**: Default 8080
+
+## Key Directories
+
+- [app/lib/](mdc:app/lib) - Core Prolog modules (tax calculations, constants). This folder contains all the business logic. Files in this folder should never generate HTML.
+- [app/pages/](mdc:app/pages) - Page controllers in Prolog. Shuld contain only high-level logic: e.g. read inputs, use business logic from core modules to make the calculations, and have a high-level (page level) HTML generation. Should use only the higher-order components and not raw html tags.
+- [app/components/](mdc:app/components) - Reusable higher-order UI components in Prolog. The components here are parametrized, and output the html. Files in this folder should never contain business logic.
+- [app/data/](mdc:app/data) - Tax bracket data and constants
+- [app/static/](mdc:app/static) - Static assets (CSS, JS)
+- [public/](mdc:public) - Publicly accessible files
+
+## Important Note
+When working with this codebase, remember that business logic, templating, and routing are all handled in Prolog. HTML is generated programmatically using DCG rules.

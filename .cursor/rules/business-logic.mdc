@@ -1,0 +1,43 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Business Logic and Tax Calculations
+
+## Core Tax Module
+
+The main tax calculation logic is in [app/lib/tax.pl](mdc:app/lib/tax.pl). This module contains:
+
+- **Tax bracket calculations** - Progressive tax rate calculations
+- **Income analysis predicates** - Gross/net salary conversions
+- **What-if scenario analysis** - Impact calculations for salary changes
+
+## Tax Constants and Data
+
+Tax rates and thresholds are defined in:
+- [app/lib/tax_constants.pl](mdc:app/lib/tax_constants.pl) - Prolog constants and facts
+- [app/data/intervals.csv](mdc:app/data/intervals.csv) - Tax bracket data (income thresholds and rates)
+
+### Tax Bracket Structure
+The intervals.csv contains income thresholds and corresponding tax rates:
+- Format: `threshold,rate`
+- Progressive taxation: each bracket applies to income above the threshold
+- Example: 12438,0.08 means 8% tax rate for income above €12,438
+
+## Key Predicates to Understand
+
+When working with tax calculations, focus on these predicate patterns:
+- `calculate_tax/3` - Main tax calculation predicates
+- `tax_bracket/2` - Tax bracket lookup predicates  
+- `gross_to_net/2` - Salary conversion predicates
+- `net_to_gross/2` - Reverse salary calculation predicates
+
+## Data Flow
+
+1. User input → Send to partial backen. If there needs to be a form validation, it needs to be done on the backend that returns the form with vaildation errors if needed.
+2. HTTP request → [app/server.pl](mdc:app/server.pl) routing
+3. Route → Page controller in [app/pages/](mdc:app/pages)
+4. Page controller → Business logic in [app/lib/](mdc:app/lib)
+5. Results → HTML generation via DCG rules (in page controler you can use only high-evel components from `@app/components/` not raw HTML tags)
+6. Response → Frontend updates (partial HTML)

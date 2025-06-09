@@ -1,3 +1,20 @@
+% =============================================================================
+% Lux Tax Calculator - Main Server
+% 
+% Development Workflow:
+% - Start server: swipl -s app/server.pl -g 'server:start' or 'make start'
+% - Server runs on http://localhost:8080
+% - After changes to Prolog files: run 'make.' in SWI-Prolog console to reload
+% - Use 'make reload' for quick predicate reloading without server restart
+% 
+% Directory Structure:
+% - app/lib/: Business logic (tax calculations, constants)
+% - app/components/: UI components (HTML generation predicates)  
+% - app/pages/: Page controllers (request handling, routing)
+% - app/data/: Data files (intervals.csv for tax brackets)
+% - app/api/: API endpoints for AJAX/partial updates
+% =============================================================================
+
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_files)).

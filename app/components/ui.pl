@@ -1,3 +1,21 @@
+% =============================================================================
+% UI Components Library
+% 
+% Reusable HTML generation predicates using Tailwind CSS classes.
+% All styling should use Tailwind CSS classes only - no custom CSS.
+% 
+% Main Components:
+% - container//1: Main page container with responsive padding
+% - card//1: White card component with border and shadow
+% - tax_calculator_form//3: Complete tax calculator form
+% - tax_results_with_tabs//4: Results display with period tabs
+% 
+% Development Notes:
+% - Always use Tailwind CSS classes for styling
+% - Test responsive design on different screen sizes
+% - Use semantic HTML elements for accessibility
+% =============================================================================
+
 :- module(ui, [container//1, card//1, app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, page_title//1, tax_calculator_form//3, tax_calculator_container//4, gross_input//1, tax_class_option//3, render_results//1, period_tabs//3, period_tab//5, tax_results_with_tabs//4]).
 :- use_module(library(http/html_write)).
 

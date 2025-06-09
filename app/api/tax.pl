@@ -121,8 +121,9 @@ calculate_tax_for_period(Gross, monthly, Details) :-
     AllDeductions.healthcare_contrib = HealthcareContrib,
     AllDeductions.pension = Pension,
     AllDeductions.unemployment = Unemployment,
+    MonthlyGross is Gross / 12,
     Details = json([
-        gross=Gross,
+        gross=MonthlyGross,
         tax=Tax,
         social_contribution=SocialContribution,
         net=Net,

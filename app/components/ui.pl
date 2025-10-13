@@ -7,8 +7,15 @@
 % Main Components:
 % - container//1: Main page container with responsive padding
 % - card//1: White card component with border and shadow
-% - tax_calculator_form//3: Complete tax calculator form
-% - tax_results_with_tabs//4: Results display with period tabs
+% - nav_card//3: Navigation card for home page links
+% - grid//2: Responsive grid container
+% - form//3: Semantic form wrapper
+% - heading//2: Semantic headings (h1, h2, etc.)
+% - paragraph//1: Semantic paragraph text
+% - link//2: Semantic link component
+% - button//2: Semantic button component
+% - section_heading//1: Section heading component
+% - results_container//2: Container for displaying calculation results
 % 
 % Development Notes:
 % - Always use Tailwind CSS classes for styling
@@ -16,8 +23,20 @@
 % - Use semantic HTML elements for accessibility
 % =============================================================================
 
-:- module(ui, [container//1, card//1, app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, page_title//1, tax_calculator_form//3, tax_calculator_container//4, gross_input//1, tax_class_option//3, render_results//1, period_tabs//3, period_tab//5, tax_results_with_tabs//4]).
+:- module(ui, [
+    container//1, card//1, nav_card//3, grid//2, 
+    form//3, heading//2, paragraph//1, link//2, button//2,
+    section_heading//1, results_container//2,
+    app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, 
+    page_title//1, tax_calculator_form//3, tax_calculator_container//4, 
+    gross_input//1, tax_class_option//3, render_results//1, 
+    period_tabs//3, period_tab//5, tax_results_with_tabs//4
+]).
 :- use_module(library(http/html_write)).
+
+% =============================================================================
+% LAYOUT COMPONENTS
+% =============================================================================
 
 container(Content) -->
     html(div([class('max-w-4xl mx-auto p-4 sm:p-6 lg:p-8')], Content)).
@@ -25,8 +44,91 @@ container(Content) -->
 card(Content) -->
     html(div([class('bg-white rounded-lg border border-gray-200 shadow-sm p-2')], Content)).
 
-app_button(Text, Type) -->
-    html(button([type(Type), class('text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none')], Text)).
+% Navigation card for home page links
+nav_card(Href, Title, Description) -->
+    html(a([
+        href(Href), 
+        class('block p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700')
+    ], [
+        \heading(h2, Title),
+        \paragraph(Description)
+    ])).
+
+% Responsive grid container
+grid(Columns, Content) -->
+    {
+        (Columns = 1 -> GridClass = 'grid grid-cols-1 gap-6'
+        ; Columns = 2 -> GridClass = 'grid grid-cols-1 md:grid-cols-2 gap-6'
+        ; Columns = 3 -> GridClass = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+        ; GridClass = 'grid grid-cols-1 gap-6')
+    },
+    html(div([class(GridClass)], Content)).
+
+% Results container for displaying calculation results
+results_container(PeriodLabel, Content) -->
+    html([
+        \section_heading(PeriodLabel),
+        div([class('space-y-4')], Content)
+    ]).
+
+% =============================================================================
+% TYPOGRAPHY COMPONENTS
+% =============================================================================
+
+page_title(Text) -->
+    html(h1([class('mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl')], Text)).
+
+% Semantic heading component
+heading(h1, Text) -->
+    html(h1([class('mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl')], Text)).
+heading(h2, Text) -->
+    html(h2([class('mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white')], Text)).
+heading(h3, Text) -->
+    html(h3([class('mb-2 text-xl font-semibold text-gray-900 dark:text-white')], Text)).
+heading(h4, Text) -->
+    html(h4([class('mb-2 text-lg font-medium text-gray-900 dark:text-white')], Text)).
+heading(_, Text) -->
+    html(h5([class('mb-2 text-base font-medium text-gray-900 dark:text-white')], Text)).
+
+% Section heading for organizing content
+section_heading(Text) -->
+    html(div([class('mb-4')], [
+        h4([class('text-lg font-semibold text-blue-700')], Text)
+    ])).
+
+% Semantic paragraph component
+paragraph(Text) -->
+    html(p([class('font-normal text-gray-700 dark:text-gray-400')], Text)).
+
+% =============================================================================
+% INTERACTIVE COMPONENTS
+% =============================================================================
+
+% Semantic link component
+link(Href, Text) -->
+    html(a([
+        href(Href), 
+        class('text-blue-600 hover:text-blue-800 underline')
+    ], Text)).
+
+% Semantic button component
+button(Text, Type) -->
+    html(button([
+        type(Type), 
+        class('text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none')
+    ], Text)).
+
+% =============================================================================
+% FORM COMPONENTS
+% =============================================================================
+
+% Semantic form wrapper
+form(Action, Method, Content) -->
+    html(form([
+        class('space-y-6'), 
+        action(Action), 
+        method(Method)
+    ], Content)).
 
 input_label(Text) -->
     html(label([class('block mb-2 text-sm font-medium text-gray-900')], Text)).
@@ -46,8 +148,17 @@ dropdown_field(Label, Name, Options) -->
 dropdown_option(Text, Value) -->
     html(option([value(Value)], Text)).
 
-page_title(Text) -->
-    html(h1([class('mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl')], Text)).
+% =============================================================================
+% LEGACY/COMPATIBILITY COMPONENTS
+% =============================================================================
+
+% Legacy button component (kept for backward compatibility)
+app_button(Text, Type) -->
+    button(Text, Type).
+
+% =============================================================================
+% TAX CALCULATOR SPECIFIC COMPONENTS
+% =============================================================================
 
 % Reusable tax calculator form component
 tax_calculator_form(GrossValue, TaxClassValue, Period) -->

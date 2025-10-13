@@ -4,14 +4,13 @@
 
 mortgage_page -->
     ui:container([
-        ui:page_title('Mortgage Calculator'),
-        ui:card([
-            form(class('space-y-6'), action('/partial/mortgage/calculate'), method('post'),
-                [
-                    ui:input_field('Loan Amount', 'amount', 'number'),
-                    ui:input_field('Interest Rate (%)', 'rate', 'number'),
-                    ui:input_field('Term (years)', 'term', 'number'),
-                    ui:button('Calculate', 'submit')
-                ])
+        \page_title('Mortgage Calculator'),
+        \card([
+            \form('/partial/mortgage/calculate', 'post', [
+                \input_field('Loan Amount', 'amount', 'number'),
+                \input_field('Interest Rate (%)', 'rate', 'number'),
+                \input_field('Term (years)', 'term', 'number'),
+                \button('Calculate', 'submit')
+            ])
         ])
     ]). 

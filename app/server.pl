@@ -14,11 +14,16 @@
 % - app/data/: Data files (intervals.csv for tax brackets)
 % - app/api/: API endpoints for AJAX/partial updates
 % =============================================================================
+:- module(server,[
+    server/1            % ?Port
+    ]).
+
 
 :- use_module(library(http/thread_httpd)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_files)).
 :- use_module(library(http/html_write)).
+:- use_module(library(http/http_unix_daemon)).
 
 :- use_module(components/header).
 :- use_module(components/navigation).
@@ -51,7 +56,7 @@ http:location(img, root(img), []).
 % :- http_handler(img(.), http_reply_from_files('public/img', []), [prefix]).
 
 server:start :-
-    http_server(http_dispatch, [port(8080)]).
+    http_server(http_dispatch, [port(8080), workers(16)]).
 
 server:stop :-
     http_stop_server(8080, []).
@@ -73,3 +78,9 @@ mortgage_handler(_Request) :-
         \header('Mortgage Calculator'),
         \mortgage_page
     ).
+
+server(Port) :-
+    http_server(http_dispatch,
+        [ port(Port),
+          workers(16)
+        ]).

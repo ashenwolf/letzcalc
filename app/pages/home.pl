@@ -1,12 +1,15 @@
 :- module(home, [home_page//0]).
 
-:- use_module('../components/ui').
+:- use_module(library(http/html_write)).
+:- use_module(components/ui, []).
+:- use_module(components/navigation, []).
 
 home_page -->
-    ui:container([
-        \page_title('Lux Tax Calculator'),
-        \grid(2, [
-            \nav_card('/tax', 'Tax Calculator', 'Calculate your taxes with what-if analysis'),
-            \nav_card('/mortgage', 'Mortgage Calculator', 'Simulate mortgage payments and analyze different scenarios')
+    ui:html_page([
+        navigation:top_nav_bar,
+        ui:container([
+            ui:card(
+                ui:hero('Home', ui:paragraph('Welcome to the Home Page!'))
+            )
         ])
     ]).

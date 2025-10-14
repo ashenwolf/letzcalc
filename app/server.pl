@@ -21,6 +21,7 @@
 :- use_module(library(http/html_write)).
 
 :- use_module(components/header).
+:- use_module(components/navigation).
 :- use_module(components/ui).
 :- use_module(pages/home).
 :- use_module(pages/tax).

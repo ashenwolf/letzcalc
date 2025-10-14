@@ -5,6 +5,7 @@
 :- use_module(library(http/html_write)).
 :- use_module('../lib/tax').
 :- use_module('../components/ui').
+:- use_module('../components/render', [render_results//1]).
 
 % Format currency with 2 decimal places
 format_currency(Value, Formatted) :-
@@ -47,7 +48,7 @@ tax_results_response_html(Gross, TaxClass, Period, json([gross=GrossResult, tax=
     },
     html(div([id('tax-results'), class('bg-gray-50 p-4 rounded-lg')], [
         \period_tabs_inline(Gross, TaxClass, Period),
-        \render_results_inline(ResultsTerm)
+        \render_results(ResultsTerm)
     ])).
 
 % Inline DCG rules to avoid module call issues
@@ -83,14 +84,6 @@ period_tab_inline(Period, Label, GrossValue, TaxClassValue, CurrentPeriod) -->
         class(Classes)
         |TwinSparkAttrs
     ], Label)).
-
-render_results_inline(Rule) --> 
-    { compound(Rule) }, % If it looks like a DCG rule call (e.g., results_content(...))
-    !, % Cut to prevent backtracking to the atomic case if Rule is compound
-    call(Rule). % Call the DCG rule
-render_results_inline(Atom) --> % Otherwise, it's an atom (e.g., the placeholder string)
-    { atomic(Atom) },
-    html(div([class('text-gray-500')], Atom)).
 
 % Calculate tax for specified period (yearly or monthly)
 calculate_tax_for_period(Gross, yearly, Details) :-

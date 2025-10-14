@@ -29,20 +29,25 @@
     section_heading//1, results_container//2,
     app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, 
     page_title//1, tax_calculator_form//3, tax_calculator_container//4, 
-    gross_input//1, tax_class_option//3, render_results//1, 
-    period_tabs//3, period_tab//5, tax_results_with_tabs//4
+    gross_input//1, tax_class_option//3,
+    period_tabs//3, period_tab//5, tax_results_with_tabs//4,
+    hero//2
 ]).
 :- use_module(library(http/html_write)).
+:- use_module(render, [render_goals//1, render_results//1]).
 
 % =============================================================================
 % LAYOUT COMPONENTS
 % =============================================================================
 
+html_page(Content) -->
+    html(div([class('max-w-none')], \render_goals(Content))).
+
 container(Content) -->
-    html(div([class('max-w-4xl mx-auto p-4 sm:p-6 lg:p-8')], Content)).
+    html(div([class('max-w-screen-xl mx-auto p-4 sm:p-6 lg:p-8')], \render_goals(Content))).
 
 card(Content) -->
-    html(div([class('bg-white rounded-lg border border-gray-200 shadow-sm p-2')], Content)).
+    html(div([class('bg-white rounded-lg border border-gray-200 shadow-sm p-2')], \render_goals(Content))).
 
 % Navigation card for home page links
 nav_card(Href, Title, Description) -->
@@ -62,13 +67,13 @@ grid(Columns, Content) -->
         ; Columns = 3 -> GridClass = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
         ; GridClass = 'grid grid-cols-1 gap-6')
     },
-    html(div([class(GridClass)], Content)).
+    html(div([class(GridClass)], \render_goals(Content))).
 
 % Results container for displaying calculation results
 results_container(PeriodLabel, Content) -->
     html([
         \section_heading(PeriodLabel),
-        div([class('space-y-4')], Content)
+        div([class('space-y-4')], \render_goals(Content))
     ]).
 
 % =============================================================================
@@ -76,7 +81,7 @@ results_container(PeriodLabel, Content) -->
 % =============================================================================
 
 page_title(Text) -->
-    html(h1([class('mb-4 text-4xl font-extrabold leading-none tracking-tight text-gray-900 md:text-5xl lg:text-6xl')], Text)).
+    heading(h2, Text).
 
 % Semantic heading component
 heading(h1, Text) -->
@@ -99,6 +104,13 @@ section_heading(Text) -->
 % Semantic paragraph component
 paragraph(Text) -->
     html(p([class('font-normal text-gray-700 dark:text-gray-400')], Text)).
+
+% Hero control
+hero(Title, Content) -->
+    html(div([class('text-center')], [
+        \heading(h1, Title),
+        \render_goals(Content)
+    ])).
 
 % =============================================================================
 % INTERACTIVE COMPONENTS
@@ -128,7 +140,7 @@ form(Action, Method, Content) -->
         class('space-y-6'), 
         action(Action), 
         method(Method)
-    ], Content)).
+    ], \render_goals(Content))).
 
 input_label(Text) -->
     html(label([class('block mb-2 text-sm font-medium text-gray-900')], Text)).
@@ -251,12 +263,3 @@ period_tab(Period, Label, GrossValue, TaxClassValue, CurrentPeriod) -->
         class(Classes)
         |TwinSparkAttrs
     ], Label)).
-
-% Helper to render results: if it's a compound term, call it as a DCG rule, else treat as atom.
-render_results(Rule) --> 
-    { compound(Rule) }, % If it looks like a DCG rule call (e.g., results_content(...))
-    !, % Cut to prevent backtracking to the atomic case if Rule is compound
-    call(Rule). % Call the DCG rule
-render_results(Atom) --> % Otherwise, it's an atom (e.g., the placeholder string)
-    { atomic(Atom) },
-    html(div([class('text-gray-500')], Atom)).

@@ -28,8 +28,8 @@
     form//3, heading//2, paragraph//1, link//2, button//2,
     section_heading//1, results_container//2,
     app_button//2, input_field//3, dropdown_field//3, dropdown_option//2, 
-    page_title//1, tax_calculator_form//3, tax_calculator_container//4, 
-    gross_input//1, tax_class_option//3,
+    page_title//1, tax_calculator_form//4, tax_calculator_container//5, 
+    number_input//2, tax_class_option//3,
     period_tabs//3, period_tab//5, tax_results_with_tabs//4,
     hero//2
 ]).
@@ -173,7 +173,7 @@ app_button(Text, Type) -->
 % =============================================================================
 
 % Reusable tax calculator form component
-tax_calculator_form(GrossValue, TaxClassValue, Period) -->
+tax_calculator_form(GrossValue, NetValue, TaxClassValue, Period) -->
     html(form([
         class('space-y-6'), 
         id('tax-calculator'), 
@@ -185,7 +185,11 @@ tax_calculator_form(GrossValue, TaxClassValue, Period) -->
     ], [
         div([
             label([class('block mb-2 text-sm font-medium text-gray-900')], 'Gross Salary (€)'),
-            \gross_input(GrossValue)
+            \number_input('gross', GrossValue)
+        ]),
+        div([
+            label([class('block mb-2 text-sm font-medium text-gray-900')], 'Net Salary (€)'),
+            \number_input('net', NetValue)
         ]),
         div([
             label([class('block mb-2 text-sm font-medium text-gray-900')], 'Tax Class'),
@@ -200,11 +204,11 @@ tax_calculator_form(GrossValue, TaxClassValue, Period) -->
     ])).
 
 % Helper for gross input with optional value
-gross_input('') -->
-    html(input([type('number'), name('gross'), class('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5')])).
-gross_input(Value) -->
+number_input(Field, '') -->
+    html(input([type('number'), name(Field), class('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5')])).
+number_input(Field, Value) -->
     { Value \= '' },
-    html(input([type('number'), name('gross'), value(Value), class('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5')])).
+    html(input([type('number'), name(Field), value(Value), class('bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5')])).
 
 % Helper for tax class option with selected state
 tax_class_option(Text, Value, SelectedValue) -->
@@ -212,11 +216,11 @@ tax_class_option(Text, Value, SelectedValue) -->
     html(option([value(Value)|Selected], Text)).
 
 % Complete tax calculator container - now WITH the outer #tax-calculator-container div
-tax_calculator_container(GrossValue, TaxClassValue, Period, ResultsContentRuleOrAtom) -->
+tax_calculator_container(GrossValue, NetValue, TaxClassValue, Period, ResultsContentRuleOrAtom) -->
     html(div([id('tax-calculator-container'), class('grid grid-cols-1 md:grid-cols-2 gap-6')], [
         % This rule now generates a sequence of two sibling divs: tax-form and tax-results INSIDE the wrapper.
         div([id('tax-form')], [
-            \tax_calculator_form(GrossValue, TaxClassValue, Period)
+            \tax_calculator_form(GrossValue, NetValue, TaxClassValue, Period)
         ]),
         div([id('tax-results'), class('bg-gray-50 p-4 rounded-lg')], [
             \tax_results_with_tabs(GrossValue, TaxClassValue, Period, ResultsContentRuleOrAtom)

@@ -55,12 +55,6 @@ http:location(img, root(img), []).
 % :- http_handler(css(.), http_reply_from_files('public/css', []), [prefix]).
 % :- http_handler(img(.), http_reply_from_files('public/img', []), [prefix]).
 
-server:start :-
-    http_server(http_dispatch, [port(8080), workers(16)]).
-
-server:stop :-
-    http_stop_server(8080, []).
-
 home_handler(_Request) :-
     reply_html_page(
         \header('Lux Tax Calculator'),

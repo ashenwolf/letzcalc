@@ -9,7 +9,7 @@ tax_page -->
         ui:container([
             ui:page_title('Tax Calculator'),
             ui:card([
-                ui:tax_calculator_container('', '1', 'yearly', 'Enter a gross salary and click Calculate to see tax breakdown')
+                ui:tax_calculator_container('', '', '1', 'yearly', 'Enter a gross salary and click Calculate to see tax breakdown')
             ])
         ])
     ]).

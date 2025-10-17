@@ -1,11 +1,5 @@
 start:
-	swipl -s app/server.pl -g 'server:start'
-
-stop:
-	swipl -s app/server.pl -g 'server:stop'
-
-# Add reload command for development workflow  
-reload: stop start
+	swipl app/server.pl --interactive --port 8080
 
 # Help target to show available commands
 help:
@@ -16,4 +10,3 @@ help:
 	@echo "  make help   - Show this help message"
 
 .PHONY: start stop reload help
-

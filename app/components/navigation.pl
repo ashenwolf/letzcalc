@@ -1,6 +1,7 @@
 :- module(navigation, [nav_link//3, nav_link//2, top_nav_bar//0]).
 :- use_module(library(http/html_write)).
 :- use_module(render, [render_goals//1, render_results//1]).
+:- use_module(ukraine).
 
 
 nav_link(Link, Label, Tooltip) -->
@@ -10,7 +11,9 @@ nav_link(Link, Label) -->
     html(li([a([href(Link), class('text-gray-900 hover:underline')], Label)])).
 
 top_nav_bar(Content) -->
-    html(header(class('sticky'), [
+    html([
+        % \render_goals(ukraine:ukraine_banner),
+        header(class('sticky'), [
         nav(class('bg-white border-gray-200'), [
             div(class('flex flex-wrap justify-between items-center mx-auto max-w-screen-xl px-4 md:px-6 py-2.5'), [
                 a([href('/'), class('flex items-center')], [
@@ -31,7 +34,7 @@ top_nav_bar(Content) -->
                 ])
             ])
         ])
-    ])).
+    ])]).
 
 top_nav_bar -->
     top_nav_bar([
